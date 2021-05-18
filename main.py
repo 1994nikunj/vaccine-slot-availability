@@ -17,7 +17,8 @@ class Scrapper(object):
     def __init__(self,
                  state: str,
                  district: str,
-                 print_scrap=False):
+                 print_all_data=False,
+                 send_mail=False):
 
         self.browser = None
         self.entry_mode = True
@@ -27,6 +28,7 @@ class Scrapper(object):
 
         self.final_data = []
         self.data_for_table = []
+        self.mail_body = ''
 
         self.state_id = None
         self.district_id = None
@@ -43,9 +45,14 @@ class Scrapper(object):
         self.start_scrapping()
         self.exit_chromedriver()
         self.analyze_data()
-        if print_scrap:
+
+        if print_all_data:
             self.print_all_scrap()
+
         self.final_verdict()
+        if send_mail and self.mail_body:
+            self.send_mail()
+
         # End application
         self.end_app()
 
@@ -193,7 +200,7 @@ class Scrapper(object):
         if self.slot_found:
             for slot in self.slot_found:
                 table.add_row(slot)
-            table.generate_table()
+            self.mail_body = table.generate_table(_return=True)
 
     def print_all_scrap(self):
         from tabularize import Tabularize
@@ -207,6 +214,34 @@ class Scrapper(object):
     def exit_chromedriver(self):
         self.browser.quit()
 
+    def send_mail(self):
+        import smtplib
+        import ssl
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        import base64
+
+        from_add = "tranecanz@gmail.com"
+        pwd = b'TmlrdW5qU2hhcm1hMDQ='
+        to_add = ["1994nikunj@gmail.com"]
+
+        msg = MIMEMultipart()
+        msg['From'] = from_add
+        msg['To'] = ', '.join(to_add)
+
+        _time = self.curr_date.strftime("%d-%b-%Y %I:%M %p")
+        msg['Subject'] = "Vaccine Slot Found for {}-{}, DateTime: {}".format(self.district, self.state, _time)
+
+        body = self.mail_body
+        msg.attach(MIMEText(body, 'plain'))
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(host="smtp.gmail.com", port=465, context=context) as server:
+            server.login(user=from_add, password=base64.b64decode(pwd).decode())
+            server.sendmail(from_addr=from_add, to_addrs=to_add, msg=msg.as_string())
+
+        print('Mail Sent to: {}'.format(to_add))
+
     @staticmethod
     def end_app():
         print('## Terminating Application')
@@ -216,4 +251,5 @@ class Scrapper(object):
 if __name__ == '__main__':
     Scrapper(state='Maharashtra',
              district='Mumbai',
-             print_scrap=False)
+             print_all_data=False,
+             send_mail=True)
