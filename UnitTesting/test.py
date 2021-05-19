@@ -1,49 +1,143 @@
-slot_val = '49  COVISHIELD Age 45+ 25  COVISHIELD Age 18+'
-slot_val = '49  COVISHIELD Age 45+ '
+"""
+slot_found = []
 
-v_arr = slot_val.strip().split()
-if v_arr.count('Age') == 1:
-    _a = '{}(Quant: {}, Age: {})'.format(v_arr[1], v_arr[0], str(v_arr[3]))
-    vac_arr = _a
-else:
+
+def scrap_data(vaccine_data=None) -> list:
+    v_arr = vaccine_data.strip().split()
+    _temp_arr = [v_arr[t * 4: t * 4 + 4] for t in range(int(len(v_arr) / 4))]
     tmp_vac = []
-    for x in range(v_arr.count('Age')):
-        k = v_arr[x*4: x*4 + 4]
-        _a = '{}(Quant: {}, Age: {})'.format(k[1], k[0], str(k[3]))
-        tmp_vac.append(_a)
-    vac_arr = ', '.join(tmp_vac)
+    for _data in _temp_arr:
+        if _data[0] != 'Booked':
+            _get = {
+                'vaccine_name': _data[1],
+                'available_quantity': _data[0],
+                'age_range': str(_data[3])
+            }
+            tmp_vac.append(_get)
 
-print(vac_arr)
+    if tmp_vac:
+        return tmp_vac
+    else:
+        return []
 
+
+test_data_array = [
+    ['NA', 'CENTER-1', 'ADDRESS-1', '20-May-2021'],
+    ['Booked COVISHIELD Age 45+', 'CENTER-2', 'ADDRESS-2', '19-May-2021'],
+    ['Booked COVISHIELD Age 18+ 1 COVISHIELD Age 45+', 'CENTER-3', 'ADDRESS-3', '19-May-2021'],
+    ['2 COVISHIELD Age 45+ Booked COVISHIELD Age 18+', 'CENTER-4', 'ADDRESS-4', '19-May-2021'],
+    ['3 COVISHIELD Age 45+ 4 COVAXIN Age 18+', 'CENTER-5', 'ADDRESS-5', '19-May-2021'],
+    ['5 COVISHIELD Age 45+ 6 COVAXIN Age 18+ 7 SPUTNIK-V Age 18+', 'CENTER-6', 'ADDRESS-6', '19-May-2021'],
+    ['Booked COVISHIELD Age 45+ Booked COVAXIN Age 45+', 'CENTER-7', 'ADDRESS-7', '19-May-2021'],
+]
+
+for x in test_data_array:
+    tjj = scrap_data(vaccine_data=x[0])
+    print(tjj)
 """
-import time
 
-from bs4 import BeautifulSoup
-from selenium.webdriver import Chrome
+final_data = [
+    {
+        "center_name": "Apollo Hospital Modern School Paid",
+        "center_address": "Modern School Sector 7 Vashi Navi Mumbai Maharashtra India, Thane, Maharashtra, 400703",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "50",
+                    "age_range": "45+"
+                }
+            ],
+            "20-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "49",
+                    "age_range": "45+"
+                }
+            ]
+        }
+    },
+    {
+        "center_name": "Apollo Hospital Navi Mumbai Paid",
+        "center_address": "Plot 13 Maharashtra 400614, Thane, Maharashtra, 400614",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "8",
+                    "age_range": "18+"
+                },
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "50",
+                    "age_range": "45+"
+                }
+            ],
+            "20-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "50",
+                    "age_range": "45+"
+                },
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "6",
+                    "age_range": "18+"
+                }
+            ]
+        }
+    },
+    {
+        "center_name": "BHAGYANAGAR UPHC (ABOVE 45)",
+        "center_address": "NEAR MUNICIPAL SCHOOL NO 75 TADALI ROAD BHAGAYANAGAR BHIWANDI, Thane, Maharashtra, 421302",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "20",
+                    "age_range": "45+"
+                }
+            ]
+        }
+    },
+    {
+        "center_name": "KHUDABAKSH HALL(BNMC) (45)",
+        "center_address": "Bala Compound  Nashik Road  Bhiwandi, Thane, Maharashtra, 421303",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "20",
+                    "age_range": "45+"
+                }
+            ]
+        }
+    }
+]
+
+start_ = '<html><table border="1" cellspacing="3" cellpadding="3" style="text-align:left;padding:0;"> ' \
+         '<tr> <th>No.</th> <th>Center Name</th> <th>Center Address</th> <th>Slot Date</th> ' \
+         '<th>Vaccine</th> <th>Quantity</th> <th>Age Range</th> </tr>'
+end_ = '</table>'
+tel = "<tr> <td>%d</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> <td>%s</td> </tr>"
 
 
-URL = 'https://www.cowin.gov.in/home'
-DRIVER = './Drivers/chromedriver.exe'
-browser = Chrome(executable_path=DRIVER)
-browser.get(url=URL)
-browser.find_element_by_class_name(name='status-switch').click()
+def prepare_message_body():
+    final_body = []
+    header_text = 'Following vaccine centers have been found with availability:\n'
+    final_body.append(header_text)
+    final_body.append(start_)
+    for idx, slot_data in enumerate(iterable=final_data, start=1):
+        center_name = slot_data['center_name']
+        center_address = slot_data['center_address']
+        for _date, _arr_1 in slot_data['slot_details'].items():
+            for _vacc in _arr_1:
+                k = tel % (idx, center_name, center_address, _date, _vacc['vaccine_name'], _vacc['available_quantity'],
+                           _vacc['age_range'])
+                final_body.append(k)
 
-# Making "State" selection
-time.sleep(0.3)
-browser.find_element_by_class_name(name='mat-form-field-infix').click()
-time.sleep(0.3)
-inner_html = browser.find_element_by_xpath(xpath='//div[@id="mat-select-0-panel"]').get_attribute('innerHTML')
-time.sleep(1)
+    final_body.append(end_)
+    print('\n'.join(final_body))
 
-browser.refresh()
-# Closing Browser
-browser.quit()
 
-html_soup = BeautifulSoup(inner_html, 'html.parser')
-
-rows = html_soup.findAll('mat-option', attrs={'class': 'mat-option mat-focus-indicator ng-tns-c64-1 ng-star-inserted'})
-for row in rows:
-    elem_id = row.get('id')
-    elem_val = row.find('span', attrs={'class': 'mat-option-text'}).text.strip()
-    print(elem_id, elem_val)
-"""
+prepare_message_body()

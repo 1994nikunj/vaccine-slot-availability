@@ -17,18 +17,14 @@ class Scrapper(object):
     def __init__(self,
                  state: str,
                  district: str,
-                 print_all_data=False,
                  send_mail=False):
 
         self.browser = None
         self.entry_mode = True
-        self.slot_found = []
         self.district = district or 'Indore'
         self.state = state or 'Madhya Pradesh'
 
-        self.final_data = []
-        self.data_for_table = []
-        self.mail_body = ''
+        self.mail_body = []
 
         self.state_id = None
         self.district_id = None
@@ -39,22 +35,23 @@ class Scrapper(object):
         self.inner_html = None
         self.curr_date = datetime.today()
         self.cols = ['Center Name', 'Address']
+        self.final_data = []
 
-        # Start application
         self.init_browser()
         self.start_scrapping()
         self.exit_chromedriver()
         self.analyze_data()
 
-        if print_all_data:
-            self.print_all_scrap()
+        # import json
+        # _printable_data = json.dumps(self.final_data, indent=4)
+        # print(_printable_data)
 
-        self.final_verdict()
-        if send_mail and self.mail_body:
-            self.send_mail()
+        if send_mail:
+            self.prepare_message_body()
+            if self.mail_body:
+                self.send_mail()
 
-        # End application
-        self.end_app()
+        self.terminate_app()
 
     def init_browser(self):
         try:
@@ -64,7 +61,7 @@ class Scrapper(object):
             self.browser.get(url=Scrapper.URL)
         except Exception as e:
             print('Failed to start Chrome-driver, aborting operation, error: {}'.format(e))
-            self.end_app()
+            self.terminate_app()
         time.sleep(1)
 
     def validate_state_selection(self):
@@ -81,11 +78,11 @@ class Scrapper(object):
         if self.state_id:
             self.state_xpath = '' '//*[@id="{}"]/span'.format(self.state_id)
             self.browser.find_element_by_xpath(xpath=self.state_xpath).click()
-            # print('** State| ID: {}, Name: {}'.format(self.state_id, self.state))
+            print('** State| ID: {}, Name: {}'.format(self.state_id, self.state))
         else:
             print('Invalid State value provided! value: {}'.format(self.state))
             self.exit_chromedriver()
-            self.end_app()
+            self.terminate_app()
 
     def validate_district_selection(self):
         self.browser.find_element_by_class_name(name='mat-select-placeholder').click()
@@ -93,7 +90,6 @@ class Scrapper(object):
         time.sleep(1)
 
         html_soup = BeautifulSoup(_html, 'html.parser')
-
         rows = html_soup.findAll('mat-option',
                                  attrs={'class': 'mat-option mat-focus-indicator ng-tns-c64-3 ng-star-inserted'})
         for row in rows:
@@ -103,11 +99,11 @@ class Scrapper(object):
         if self.district_id:
             self.district_xpath = '//*[@id="{}"]/span'.format(self.district_id)
             self.browser.find_element_by_xpath(xpath=self.district_xpath).click()
-            # print('** District| ID: {}, Name: {}'.format(self.district_id, self.district))
+            print('** District| ID: {}, Name: {}'.format(self.district_id, self.district))
         else:
             print('Invalid District value provided! value: {}'.format(self.state))
             self.exit_chromedriver()
-            self.end_app()
+            self.terminate_app()
 
     def start_scrapping(self):
         # Make selection on Switch element
@@ -119,6 +115,7 @@ class Scrapper(object):
             time.sleep(0.5)
             self.validate_district_selection()
             self.entry_mode = False
+
         else:
             # Making "State" selection
             time.sleep(0.5)
@@ -142,19 +139,23 @@ class Scrapper(object):
         time.sleep(1)
 
     @staticmethod
-    def scrap_data(_val) -> str:
-        v_arr = _val.strip().split()
-        if v_arr.count('Age') == 1:
-            _a = '{}(Quant: {}, Age: {})'.format(v_arr[1], v_arr[0], str(v_arr[3]))
-            vac_arr = _a
+    def scrap_data(vaccine_data=None) -> list:
+        v_arr = vaccine_data.strip().split()
+        _temp_arr = [v_arr[t * 4: t * 4 + 4] for t in range(int(len(v_arr) / 4))]
+        tmp_vac = []
+        for _data in _temp_arr:
+            if _data[0] != 'Booked':
+                _get = {
+                    'vaccine_name': _data[1],
+                    'available_quantity': _data[0],
+                    'age_range': str(_data[3])
+                }
+                tmp_vac.append(_get)
+
+        if tmp_vac:
+            return tmp_vac
         else:
-            tmp_vac = []
-            for x in range(v_arr.count('Age')):
-                k = v_arr[x * 4: x * 4 + 4]
-                _a = '{}(Quant: {}, Age: {})'.format(k[1], k[0], str(k[3]))
-                tmp_vac.append(_a)
-            vac_arr = ', '.join(tmp_vac)
-        return vac_arr
+            return []
 
     def analyze_data(self):
         html_soup = BeautifulSoup(self.inner_html, 'html.parser')
@@ -162,57 +163,58 @@ class Scrapper(object):
         rows = html_soup.findAll('div', attrs={'class': 'row ng-star-inserted'})
         for row in rows:
             _slot_details = {}
-            _for_table = []
             slot_available_wrap = row.find('ul', attrs={'class': 'slot-available-wrap'})
-
-            _center_name = row.find('h5', attrs={'class': 'center-name-title'}).text.strip()
-            _center_address = row.find('p', attrs={'class': 'center-name-text'}).text.strip()
-            _temp = {
-                'center_name': _center_name,
-                'center_address': _center_address
-            }
-            _for_table.append(_center_name)
-            _for_table.append(_center_address)
 
             for idx, x in enumerate(slot_available_wrap):
                 if not isinstance(x, bs4.element.Comment):
                     slot_date = (self.curr_date + timedelta(days=idx)).strftime("%d-%b-%Y")
                     if self.cols[-1] != (self.curr_date + timedelta(days=6)).strftime("%d-%b-%Y"):
                         self.cols.append(slot_date)
-                    _slot_val = x.text.strip()
-                    if 'Booked' not in _slot_val and _slot_val != 'NA':
-                        vacc_val = self.scrap_data(_slot_val)
-                        self.slot_found.append([_center_name, _center_address, slot_date, vacc_val])
-                    _slot_details[slot_date] = _slot_val
-                    _for_table.append(_slot_val)
 
-            _temp['slot_details'] = _slot_details
-            self.final_data.append(_temp)
-            self.data_for_table.append(_for_table)
+                    # Scrap Vaccine details
+                    vaccine_data = self.scrap_data(vaccine_data=x.text)
+                    if vaccine_data:
+                        _slot_details[slot_date] = vaccine_data
 
-    def final_verdict(self):
-        from tabularize import Tabularize
+            _temp_dict = {
+                'center_name': row.find('h5', attrs={'class': 'center-name-title'}).text.strip(),
+                'center_address': row.find('p', attrs={'class': 'center-name-text'}).text.strip(),
+                'slot_details': _slot_details
+            }
 
-        _col = ['Center Name', 'Center Address', 'Slot Date', 'Vaccine Availability Details']
-        _time = self.curr_date.strftime("%d-%b-%Y %I:%M %p")
-        _title = 'Realtime Vaccine data: {}, {} >> {}'.format(self.state, self.district, _time)
-        table = Tabularize(column_names=_col, right_padding=2, title=_title)
-        if self.slot_found:
-            for slot in self.slot_found:
-                table.add_row(slot)
-            self.mail_body = table.generate_table(_return=True)
+            if _slot_details:
+                self.final_data.append(_temp_dict)
 
-    def print_all_scrap(self):
-        from tabularize import Tabularize
+    def prepare_message_body(self):
+        start_ = '<html><body><p>Following vaccine centers have been found with availability:</p>' \
+                 '<table border="1" cellspacing="3" cellpadding="3" style="text-align:left;padding:0;"> ' \
+                 '<tr> <th>No.</th> <th>Center Name</th> <th>Center Address</th> <th>Slot Date</th> ' \
+                 '<th>Vaccine</th> <th>Quantity</th> <th>Age Range</th> </tr>'
+        tel = "<tr> " \
+              "<td style='text-align: center'>%d</td> " \
+              "<td>%s</td> " \
+              "<td>%s</td> " \
+              "<td>%s</td> " \
+              "<td style='text-align: center'>%s</td> " \
+              "<td style='color: red;text-align: center'>%s</td> " \
+              "<td style='text-align: center'>%s</td> " \
+              "</tr>"
+        end_ = '</table><p>Thanks, Nikunj :)</p></body></html>'
 
-        _title = 'Vaccine Availability Date: %s, %s' % (self.state, self.district)
-        table = Tabularize(column_names=self.cols, right_padding=2, title=_title)
-        for entry in self.data_for_table:
-            table.add_row(entry)
-        table.generate_table()
+        self.mail_body.append(start_)
+        idx = 1
+        for slot_data in self.final_data:
+            center_name = slot_data['center_name']
+            center_address = slot_data['center_address']
+            for _date, _arr_1 in slot_data['slot_details'].items():
+                for _vac in _arr_1:
+                    k = tel % (idx, center_name, center_address, _date, _vac['vaccine_name'],
+                               _vac['available_quantity'], _vac['age_range'])
+                    self.mail_body.append(k)
+                    idx += 1
 
-    def exit_chromedriver(self):
-        self.browser.quit()
+        self.mail_body.append(end_)
+        # print('\n'.join(self.mail_body))
 
     def send_mail(self):
         import smtplib
@@ -223,17 +225,19 @@ class Scrapper(object):
 
         from_add = "tranecanz@gmail.com"
         pwd = b'TmlrdW5qU2hhcm1hMDQ='
-        to_add = ["1994nikunj@gmail.com"]
+        to_add = ["1994nikunj@gmail.com", "seshadri.bashyam@gmail.com"]
+        # to_add = ["1994nikunj@gmail.com"]
 
         msg = MIMEMultipart()
         msg['From'] = from_add
         msg['To'] = ', '.join(to_add)
 
         _time = self.curr_date.strftime("%d-%b-%Y %I:%M %p")
-        msg['Subject'] = "Vaccine Slot Found for {}-{}, DateTime: {}".format(self.district, self.state, _time)
+        msg['Subject'] = "(auto-generated) Vaccine Slot Found for {}-{}, DateTime: {}".format(
+            self.district, self.state, _time)
 
-        body = self.mail_body
-        msg.attach(MIMEText(body, 'plain'))
+        body = '\n'.join(self.mail_body)
+        msg.attach(MIMEText(body, 'html'))
 
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(host="smtp.gmail.com", port=465, context=context) as server:
@@ -242,14 +246,21 @@ class Scrapper(object):
 
         print('Mail Sent to: {}'.format(to_add))
 
+    def exit_chromedriver(self):
+        self.browser.quit()
+
     @staticmethod
-    def end_app():
+    def terminate_app():
         print('## Terminating Application')
         quit()
 
 
 if __name__ == '__main__':
+    t1 = time.time()
+
     Scrapper(state='Maharashtra',
-             district='Mumbai',
-             print_all_data=False,
+             district='Thane',
              send_mail=True)
+
+    t2 = time.time() - t1
+    print('Total Execution Time:', t2)

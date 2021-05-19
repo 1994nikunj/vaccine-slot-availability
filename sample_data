@@ -1,0 +1,85 @@
+slot_found = [
+    ['CENTER-3', 'ADDRESS-3', '19-May-2021', 'COVISHIELD(Quantity: 1, Age-Range: 45+)'],
+    ['CENTER-4', 'ADDRESS-4', '19-May-2021', 'COVISHIELD(Quantity: 2, Age-Range: 45+)'],
+    ['CENTER-5', 'ADDRESS-5', '19-May-2021', 'COVISHIELD(Quantity: 3, Age-Range: 45+), COVAXIN(Quantity: 4, Age-Range: 18+)'],
+    ['CENTER-6', 'ADDRESS-6', '19-May-2021', 'COVISHIELD(Quantity: 5, Age-Range: 45+), COVAXIN(Quantity: 6, Age-Range: 18+), SPUTNIK-V(Quantity: 7, Age-Range: 18+)']
+]
+
+final_data = [
+    {
+        "center_name": "Apollo Hospital Modern School Paid",
+        "center_address": "Modern School Sector 7 Vashi Navi Mumbai Maharashtra India, Thane, Maharashtra, 400703",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "50",
+                    "age_range": "45+"
+                }
+            ],
+            "20-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "49",
+                    "age_range": "45+"
+                }
+            ]
+        }
+    },
+    {
+        "center_name": "Apollo Hospital Navi Mumbai Paid",
+        "center_address": "Plot 13 Parsik Hill Rd Sector 23 CBD Belapur Navi Mumbai Maharashtra 400614, Thane, Maharashtra, 400614",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "8",
+                    "age_range": "18+"
+                },
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "50",
+                    "age_range": "45+"
+                }
+            ],
+            "20-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "50",
+                    "age_range": "45+"
+                },
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "6",
+                    "age_range": "18+"
+                }
+            ]
+        }
+    },
+    {
+        "center_name": "BHAGYANAGAR UPHC (ABOVE 45)",
+        "center_address": "NEAR MUNICIPAL SCHOOL NO 75 TADALI ROAD BHAGAYANAGAR BHIWANDI, Thane, Maharashtra, 421302",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "20",
+                    "age_range": "45+"
+                }
+            ]
+        }
+    },
+    {
+        "center_name": "KHUDABAKSH HALL(BNMC) (45)",
+        "center_address": "Bala Compound  Nashik Road  Bhiwandi, Thane, Maharashtra, 421303",
+        "slot_details": {
+            "19-May-2021": [
+                {
+                    "vaccine_name": "COVISHIELD",
+                    "available_quantity": "20",
+                    "age_range": "45+"
+                }
+            ]
+        }
+    }
+]
