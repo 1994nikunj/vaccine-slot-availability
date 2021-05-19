@@ -224,7 +224,7 @@ class Scrapper(object):
         import base64
 
         from_add = "tranecanz@gmail.com"
-        pwd = b'TmlrdW5qU2hhcm1hMDQ='  # to be filled before use
+        pwd = b'XX'  # to be filled before use
         to_add = ["1994nikunj@gmail.com", "seshadri.bashyam@gmail.com"]
         # to_add = ["1994nikunj@gmail.com"]
 
