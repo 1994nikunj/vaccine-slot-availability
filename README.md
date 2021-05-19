@@ -3,9 +3,6 @@
 > - Still in beta
 
 >> libraries in use:
-> - bs4
->  - For parsing and scrapping the web data
-> - selenium
->  - For browser automation
-> - smtplib, ssl, email
->  - For mailing services used by the application
+> - bs4 - For parsing and scrapping the web data
+> - selenium - For browser automation
+> - smtplib, ssl, email - For mailing services used by the application
