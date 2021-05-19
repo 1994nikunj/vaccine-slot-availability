@@ -1,3 +1,3 @@
-# vaccine-slot-availability - A Public Repo
+# vaccine-slot-availability - By: Nikunj Sharma
 
-> STILL UNDER DEVELOPMENT
+> Still in beta
