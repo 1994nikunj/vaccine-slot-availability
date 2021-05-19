@@ -87,7 +87,7 @@ for row in rows:
 
 # print('Table Data:', data_for_table)
 # print('Table Columns:', cols)
-
+# TmlrdW5qU2hhcm1hMDQ=
 print_table = False
 if print_table:
     table = Tabularize(column_names=cols, right_padding=2, title="Title: Sample Table")
