@@ -1,5 +1,4 @@
-__Author__ = ' NIKUNJ SHARMA '
-__Date__ = '   18th May 2021 '
+__Author__ = 'NIKUNJ SHARMA'
 
 import time
 from datetime import datetime, timedelta
@@ -9,11 +8,10 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver import Chrome
 
+import settings as _set
+
 
 class Scrapper(object):
-    URL = 'https://www.cowin.gov.in/home'
-    DRIVER_PATH = './Drivers/chromedriver.exe'
-
     def __init__(self,
                  state: str,
                  district: str,
@@ -58,8 +56,8 @@ class Scrapper(object):
         try:
             print('## Initializing Application')
             chrome_options = webdriver.ChromeOptions()
-            self.browser = Chrome(executable_path=Scrapper.DRIVER_PATH, options=chrome_options)
-            self.browser.get(url=Scrapper.URL)
+            self.browser = Chrome(executable_path=_set.DRIVER_PATH, options=chrome_options)
+            self.browser.get(url=_set.URL)
         except Exception as e:
             print('Failed to start Chrome-driver, aborting operation, error: {}'.format(e))
             self.terminate_app()
@@ -215,9 +213,9 @@ class Scrapper(object):
                 </tr>"""
         end_ = """</table>
                 <br>
-                Aapka aapna,<br>
-                Nikunj<br>
-                Stay Safe  :-)
+                Thanks,<br>
+                Nikunj :)
+                <br>
                 </body>
                 </html>"""
 
@@ -242,17 +240,16 @@ class Scrapper(object):
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
 
-        from_add = ""
-        pwd = ''
-        to_add = [""]
+        from_add = _set.MAIL_FROM
+        pwd = _set.MAIL_PASS
+        to_add = _set.MAIL_TO
 
         msg = MIMEMultipart()
         msg['From'] = from_add
         msg['To'] = ', '.join(to_add)
 
         _time = self.curr_date.strftime("%d-%b-%Y %I:%M %p")
-        msg['Subject'] = "(auto-generated) Vaccine Slot Found for {}-{}, DateTime: {}".format(
-            self.district, self.state, _time)
+        msg['Subject'] = _set.MAIL_SUBJECT.format(self.district, self.state, _time)
 
         body = '\n'.join(self.mail_body)
         msg.attach(MIMEText(body, 'html'))
@@ -274,6 +271,6 @@ class Scrapper(object):
 
 
 if __name__ == '__main__':
-    Scrapper(state='Maharashtra',
-             district='Mumbai',
-             send_mail=True)
+    Scrapper(state=_set.STATE,
+             district=_set.DISTRICT,
+             send_mail=_set.SEND_EMAIL)
