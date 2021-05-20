@@ -34,6 +34,7 @@ class Scrapper(object):
 
         self.inner_html = None
         self.curr_date = datetime.today()
+        self.slot_date = None
         self.cols = ['Center Name', 'Address']
         self.final_data = []
 
@@ -140,15 +141,14 @@ class Scrapper(object):
 
     @staticmethod
     def scrap_data(vaccine_data=None) -> list:
-        v_arr = vaccine_data.strip().split()
-        _temp_arr = [v_arr[t * 4: t * 4 + 4] for t in range(int(len(v_arr) / 4))]
+        v_arr = [_x.strip().split() for _x in vaccine_data.split('+')][:-1]
         tmp_vac = []
-        for _data in _temp_arr:
-            if _data[0] != 'Booked':
+        for _data in v_arr:
+            if 'book' not in _data[0].lower():
                 _get = {
                     'vaccine_name': _data[1],
                     'available_quantity': _data[0],
-                    'age_range': str(_data[3])
+                    'age_range': str(_data[5])
                 }
                 tmp_vac.append(_get)
 
@@ -167,14 +167,15 @@ class Scrapper(object):
 
             for idx, x in enumerate(slot_available_wrap):
                 if not isinstance(x, bs4.element.Comment):
-                    slot_date = (self.curr_date + timedelta(days=idx)).strftime("%d-%b-%Y")
+                    self.slot_date = (self.curr_date + timedelta(days=idx)).strftime("%d-%b-%Y")
                     if self.cols[-1] != (self.curr_date + timedelta(days=6)).strftime("%d-%b-%Y"):
-                        self.cols.append(slot_date)
+                        self.cols.append(self.slot_date)
 
                     # Scrap Vaccine details
-                    vaccine_data = self.scrap_data(vaccine_data=x.text)
+                    raw = x.text.replace('  ', ' ')
+                    vaccine_data = self.scrap_data(vaccine_data=raw)
                     if vaccine_data:
-                        _slot_details[slot_date] = vaccine_data
+                        _slot_details[self.slot_date] = vaccine_data
 
             _temp_dict = {
                 'center_name': row.find('h5', attrs={'class': 'center-name-title'}).text.strip(),
@@ -186,20 +187,39 @@ class Scrapper(object):
                 self.final_data.append(_temp_dict)
 
     def prepare_message_body(self):
-        start_ = '<html><body><p>Following vaccine centers have been found with availability:</p>' \
-                 '<table border="1" cellspacing="3" cellpadding="3" style="text-align:left;padding:0;"> ' \
-                 '<tr> <th>No.</th> <th>Center Name</th> <th>Center Address</th> <th>Slot Date</th> ' \
-                 '<th>Vaccine</th> <th>Quantity</th> <th>Age Range</th> </tr>'
-        tel = "<tr> " \
-              "<td style='text-align: center'>%d</td> " \
-              "<td>%s</td> " \
-              "<td>%s</td> " \
-              "<td>%s</td> " \
-              "<td style='text-align: center'>%s</td> " \
-              "<td style='color: red;text-align: center'>%s</td> " \
-              "<td style='text-align: center'>%s</td> " \
-              "</tr>"
-        end_ = '</table><p>Thanks, Nikunj :)</p></body></html>'
+        _time = self.curr_date.strftime("%d-%b-%Y %I:%M %p")
+        start_ = """<html>
+                <body>
+                <p>**Following vaccine centers have been found with availability in
+                    <strong style='color: green'>%s, %s </strong>
+                    <em style='color: blue'>(%s)</em>
+                </p>
+                    <table border="2" cellspacing="1" cellpadding="5" style="text-align:left;padding:0;"> 
+                        <tr> 
+                            <th>No.</th> 
+                            <th>Center Name</th> 
+                            <th>Center Address</th> 
+                            <th>Slot Date</th> 
+                            <th>Vaccine</th> 
+                            <th>Quantity</th> 
+                            <th>Age Range</th> 
+                        </tr>""" % (self.district, self.state, _time)
+        tel = """<tr> 
+                    <td style='text-align: center'> %d </td>                <!-- Serial No. -->
+                    <td> %s </td>                                           <!-- Center Name -->
+                    <td> %s </td>                                           <!-- Center Address -->
+                    <td> %s </td>                                           <!-- Slot Date -->
+                    <td style='text-align: center'> %s </td>                <!-- Vaccine -->
+                    <td style='color: red;text-align: center'> %s </td>     <!-- Quantity -->
+                    <td style='text-align: center'> %s+ </td>               <!-- Age Range -->
+                </tr>"""
+        end_ = """</table>
+                <br>
+                Aapka aapna,<br>
+                Nikunj<br>
+                Stay Safe  :-)
+                </body>
+                </html>"""
 
         self.mail_body.append(start_)
         idx = 1
@@ -221,12 +241,10 @@ class Scrapper(object):
         import ssl
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
-        import base64
 
-        from_add = "tranecanz@gmail.com"
-        pwd = b'XX'  # to be filled before use
-        to_add = ["1994nikunj@gmail.com", "seshadri.bashyam@gmail.com"]
-        # to_add = ["1994nikunj@gmail.com"]
+        from_add = ""
+        pwd = ''
+        to_add = [""]
 
         msg = MIMEMultipart()
         msg['From'] = from_add
@@ -241,7 +259,7 @@ class Scrapper(object):
 
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(host="smtp.gmail.com", port=465, context=context) as server:
-            server.login(user=from_add, password=base64.b64decode(pwd).decode())
+            server.login(user=from_add, password=pwd)
             server.sendmail(from_addr=from_add, to_addrs=to_add, msg=msg.as_string())
 
         print('Mail Sent to: {}'.format(to_add))
@@ -256,11 +274,6 @@ class Scrapper(object):
 
 
 if __name__ == '__main__':
-    t1 = time.time()
-
     Scrapper(state='Maharashtra',
-             district='Thane',
+             district='Mumbai',
              send_mail=True)
-
-    t2 = time.time() - t1
-    print('Total Execution Time:', t2)

@@ -1,17 +1,12 @@
-"""
-slot_found = []
-
-
 def scrap_data(vaccine_data=None) -> list:
-    v_arr = vaccine_data.strip().split()
-    _temp_arr = [v_arr[t * 4: t * 4 + 4] for t in range(int(len(v_arr) / 4))]
+    v_arr = [_x.strip().split() for _x in vaccine_data.split('+')][:-1]
     tmp_vac = []
-    for _data in _temp_arr:
-        if _data[0] != 'Booked':
+    for _data in v_arr:
+        if 'book' not in _data[0].lower():
             _get = {
                 'vaccine_name': _data[1],
                 'available_quantity': _data[0],
-                'age_range': str(_data[3])
+                'age_range': str(_data[5])
             }
             tmp_vac.append(_get)
 
@@ -20,22 +15,20 @@ def scrap_data(vaccine_data=None) -> list:
     else:
         return []
 
-
 test_data_array = [
-    ['NA', 'CENTER-1', 'ADDRESS-1', '20-May-2021'],
-    ['Booked COVISHIELD Age 45+', 'CENTER-2', 'ADDRESS-2', '19-May-2021'],
-    ['Booked COVISHIELD Age 18+ 1 COVISHIELD Age 45+', 'CENTER-3', 'ADDRESS-3', '19-May-2021'],
-    ['2 COVISHIELD Age 45+ Booked COVISHIELD Age 18+', 'CENTER-4', 'ADDRESS-4', '19-May-2021'],
-    ['3 COVISHIELD Age 45+ 4 COVAXIN Age 18+', 'CENTER-5', 'ADDRESS-5', '19-May-2021'],
-    ['5 COVISHIELD Age 45+ 6 COVAXIN Age 18+ 7 SPUTNIK-V Age 18+', 'CENTER-6', 'ADDRESS-6', '19-May-2021'],
-    ['Booked COVISHIELD Age 45+ Booked COVAXIN Age 45+', 'CENTER-7', 'ADDRESS-7', '19-May-2021'],
+    'Booked COVISHIELD Dose1: 0Dose2: 0Age 45+',
+    ' 49 COVISHIELD Dose1: 0Dose2: 49Age 45+ Booked COVISHIELD Dose1: 0Dose2: 0Age 18+',
+    'Booked COVAXIN Dose1: 0Dose2: 0Age 45+ 50 COVAXIN Dose1: 0Dose2: 50Age 45+ 4 COVAXIN Dose1: 0Dose2: 4Age 18+',
+    'Booked COVAXIN Dose1: 0Dose2: 0Age 45+',
+    '10 COVISHIELD Dose1: 0Dose2: 10Age 45+ ',
+    'Booked COVAXIN Dose1: 0Dose2: 0Age 18+ Booked COVAXIN Dose1: 0Dose2: 0Age 45+'
 ]
 
 for x in test_data_array:
-    tjj = scrap_data(vaccine_data=x[0])
-    print(tjj)
-"""
+    t = scrap_data(vaccine_data=x)
+    print(t)
 
+"""
 final_data = [
     {
         "center_name": "Apollo Hospital Modern School Paid",
@@ -141,3 +134,4 @@ def prepare_message_body():
 
 
 prepare_message_body()
+"""
