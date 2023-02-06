@@ -1,4 +1,4 @@
-# Project Name: "vaccine-slot-notifier"
+# "Automated Web Scrapper for Health-Center Scheduling Data"
 Brief description: Notifies the user(s) via email of the vaccine slot availability in the city they enqired for.
 
 > By: Nikunj Sharma (1994nikunj@git, 1994nikunj@gmail)
